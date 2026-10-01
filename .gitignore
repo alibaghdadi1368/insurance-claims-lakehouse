@@ -1,0 +1,20 @@
+# generated data - reproducible with `python -m generator backfill`
+data/landing/
+data/state/
+data/outbox/
+
+# secrets
+.env
+*.pem
+*.p8
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# editors / OS
+.vscode/
+.idea/
+.DS_Store
