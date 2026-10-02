@@ -12,7 +12,7 @@ See [docs/architecture.md](docs/architecture.md) for the design.
 
 ## Status
 
-- [ ] Synthetic source data (policies, premiums, claim events)
+- [x] Synthetic source data (policies, premiums, claim events)
 - [ ] S3 + Snowflake Bronze
 - [ ] Kafka streaming
 - [ ] dbt Silver / Gold
