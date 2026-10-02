@@ -14,7 +14,7 @@ See [docs/architecture.md](docs/architecture.md) for the design.
 
 - [x] Synthetic source data (policies, premiums, claim events)
 - [x] S3 + Snowflake Bronze
-- [ ] Kafka streaming
+- [x] Kafka streaming
 - [ ] dbt Silver / Gold
 - [ ] Airflow
 - [ ] Dashboard
