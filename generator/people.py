@@ -1,23 +1,28 @@
 """Customers and their cars."""
 
 from datetime import date, timedelta
+
 import numpy as np
 import pandas as pd
+
 from generator import config
 
 # Dutch postcodes never use these letter pairs
 BANNED_PC_LETTERS = {"SA", "SD", "SS"}
-# Dutch plates skip vowels (and, C, Q, W, M, Y) so they can't spell words
+# Dutch plates skip vowels (and C, Q, W, M, Y) so they can't spell words
 PLATE_LETTERS = list("BDFGHJKLNPRSTVXZ")
+
 
 def load_postcodes() -> pd.DataFrame:
     pcs = pd.read_csv(config.POSTCODE_FILE, dtype={"postcode": str})
     pcs["weight"] = pcs["population"] / pcs["population"].sum()
     return pcs
 
+
 def _random_dates(rng, start: date, end: date, n: int) -> list[date]:
     span = (end - start).days
     return [start + timedelta(days=int(d)) for d in rng.integers(0, span + 1, n)]
+
 
 def _full_postcode(rng, pc4: str) -> str:
     while True:
@@ -25,18 +30,21 @@ def _full_postcode(rng, pc4: str) -> str:
         if letters not in BANNED_PC_LETTERS:
             return f"{pc4} {letters}"
 
+
 def _plate(rng) -> str:
     # one of the current sidecode formats, e.g. GX-123-B
     l1 = "".join(rng.choice(PLATE_LETTERS, 2))
     l2 = rng.choice(PLATE_LETTERS)
     return f"{l1}-{rng.integers(100, 1000)}-{l2}"
 
-def make_customers(n, first_id, since_start, since_end, rng, fake, postcode):
-    pc_rows = postcode.sample(n, replace=True, weights="weight", random_state=rng)
+
+def make_customers(n, first_id, since_start, since_end, rng, fake, postcodes):
+    pc_rows = postcodes.sample(n, replace=True, weights="weight", random_state=rng)
     since = _random_dates(rng, since_start, since_end, n)
+
     # adult drivers, most of them between 30 and 60
     ages = np.clip(rng.normal(46, 14, n), 18, 88).astype(int)
-    birth = [s - timedelta(days=int(a * 365.25 + rng.integers(0, 365))) for s, a in zip(since, age)]
+    birth = [s - timedelta(days=int(a * 365.25 + rng.integers(0, 365))) for s, a in zip(since, ages)]
 
     rows = []
     for i in range(n):
@@ -52,15 +60,17 @@ def make_customers(n, first_id, since_start, since_end, rng, fake, postcode):
             "postcode": _full_postcode(rng, pc_rows["postcode"].iat[i]),
             "city": pc_rows["municipality"].iat[i],
             "customer_since": since[i],
-            "updated_at": since[i]
+            "updated_at": since[i],
         })
-        return pd.DataFrame(rows)
+    return pd.DataFrame(rows)
+
 
 def make_vehicles(customers, first_id, rng):
     owners = list(customers["customer_id"])
     # some households insure a second car
     second = customers.sample(frac=config.SECOND_CAR_SHARE, random_state=rng)["customer_id"]
     owners += list(second)
+
     picks = rng.integers(0, len(config.VEHICLES), len(owners))
     rows = []
     for i, (owner, pick) in enumerate(zip(owners, picks)):
@@ -78,22 +88,28 @@ def make_vehicles(customers, first_id, rng):
         })
     return pd.DataFrame(rows)
 
+
 def make_messy(customers, rng):
     """Real exports are never clean. Add the kind of noise Silver has to fix."""
     df = customers.copy()
     n = len(df)
+
     # postcodes typed without the space and in lower case
     idx = rng.choice(n, size=int(n * 0.03), replace=False)
     df.loc[df.index[idx], "postcode"] = df["postcode"].iloc[idx].str.replace(" ", "").str.lower()
+
     # emails in capitals from an old web form
     idx = rng.choice(n, size=int(n * 0.02), replace=False)
     df.loc[df.index[idx], "email"] = df["email"].iloc[idx].str.upper()
+
     # international phone format
     idx = rng.choice(n, size=int(n * 0.10), replace=False)
     df.loc[df.index[idx], "phone"] = "+31 6 " + df["phone"].iloc[idx].str[2:]
-    # a few missing phone format
+
+    # a few missing phone numbers
     idx = rng.choice(n, size=int(n * 0.01), replace=False)
     df.loc[df.index[idx], "phone"] = None
+
     # the export job sometimes writes a row twice
     dupes = df.sample(frac=0.005, random_state=rng)
     return pd.concat([df, dupes]).sort_values("customer_id").reset_index(drop=True)

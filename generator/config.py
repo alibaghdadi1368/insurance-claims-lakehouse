@@ -12,14 +12,15 @@ from pathlib import Path
 SEED = 42
 
 HISTORY_START = date(2024, 1, 1)
-HISTORY_END = date(2026, 9, 30) #backfill stops here, daily runs continue after
+HISTORY_END = date(2026, 9, 30)  # backfill stops here, daily runs continue after
 
 N_CUSTOMERS = 12_000
 SECOND_CAR_SHARE = 0.15
-NEW_CUSTOMERS_PER_DAY = (8, 20) #min, max for daily runs
+NEW_CUSTOMERS_PER_DAY = (8, 20)  # min, max for daily runs
 
 ROOT = Path(__file__).resolve().parents[1]
 LANDING_DIR = ROOT / "data" / "landing"
+STATE_DIR = ROOT / "data" / "state"
 POSTCODE_FILE = ROOT / "generator" / "reference" / "postcodes.csv"
 
 # WA = third-party liability only, WA_PLUS adds theft/glass/storm,
@@ -42,8 +43,9 @@ CLAIM_TYPES = {
 
 # city drivers claim more often; level 1 = very strongly urban
 URBANITY_RISK = {1: 1.35, 2: 1.2, 3: 1.0, 4: 0.9, 5: 0.8}
-REJECTED_RATE = 0.12
-FRAUD_POLICY_SHARE = 0.015 # policies that get a suspicious early claim
+
+REJECTION_RATE = 0.12
+FRAUD_POLICY_SHARE = 0.015  # policies that get a suspicious early claim
 
 VEHICLES = [
     # make, model, fuel, catalog value range (EUR)
