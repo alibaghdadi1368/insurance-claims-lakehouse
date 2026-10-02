@@ -164,3 +164,4 @@ def split_by_day(events, cutoff: date):
 
 def to_frame(events) -> pd.DataFrame:
     return pd.DataFrame(events)
+
