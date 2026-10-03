@@ -1,0 +1,58 @@
+version: 2
+
+models:
+  - name: fct_claims
+    description: One row per claim, from first report to payment or rejection.
+    columns:
+      - name: claim_id
+        data_tests: [unique, not_null]
+      - name: policy_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_policies')
+                field: policy_id
+      - name: claim_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['reported', 'assessed', 'approved', 'rejected', 'paid']
+      - name: product_code
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['WA', 'WA_PLUS', 'ALLRISK']
+
+  - name: fct_premiums
+    description: One row per monthly premium instalment.
+    columns:
+      - name: payment_id
+        data_tests: [unique, not_null]
+
+  - name: dim_policy
+    description: Policy history (SCD Type 2). Filter on is_current for today's state.
+    columns:
+      - name: policy_key
+        data_tests: [unique, not_null]
+
+  - name: dim_customer
+    description: Customer history (SCD Type 2).
+    columns:
+      - name: customer_key
+        data_tests: [unique, not_null]
+
+  - name: mart_loss_ratio_monthly
+    description: Premium due, claims paid and loss ratio per month and product.
+
+  - name: mart_claims_sla
+    description: Handling speed per report month and claim type.
+
+  - name: mart_fraud_signals
+    description: Claims with at least two warning signs, with the reasons spelled out.
+
+  - name: mart_region_risk
+    description: Policies, claims and claims per 1,000 policies for each municipality.
+    columns:
+      - name: gm_code
+        data_tests: [unique, not_null]
