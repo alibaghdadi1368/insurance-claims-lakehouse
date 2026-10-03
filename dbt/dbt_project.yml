@@ -1,0 +1,27 @@
+# Silver models become views (cheap, always fresh)
+# Gold models become tables (fast for the dashboard)
+
+name: insurance
+version: "1.0.0"
+profile: insurance
+
+flags: 
+  send_anonymous_usage_stats: false
+
+model-paths: ["models"]
+snapshot-paths: ["snapshots"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+
+models:
+  insurance:
+    silver:
+      +schema: silver
+      +materialized: view
+    gold:
+      +schema: gold
+      +materialized: table
+
+snapshots: 
+  insurance:
+    +target_schema: silver
