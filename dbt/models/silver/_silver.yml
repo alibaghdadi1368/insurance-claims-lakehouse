@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: Latest version of each customer, with cleaned postcode, email and phone.
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+      - name: postcode
+        data_tests:
+          - not_null
+
+  - name: stg_policies
+    columns:
+      - name: policy_id
+        data_tests: [unique, not_null]
+
+  - name: stg_claim_events
+    description: Claim events unpacked from JSON, deduplicated on event_id.
+    columns:
+      - name: event_id
+        data_tests: [unique, not_null]
+      - name: event_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['CLAIM_REPORTED', 'CLAIM_ASSESSED', 'CLAIM_APPROVED', 'CLAIM_REJECTED', 'CLAIM_PAID']

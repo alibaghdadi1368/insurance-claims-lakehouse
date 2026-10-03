@@ -1,0 +1,13 @@
+# tells dbt where Bronze lives
+version: 2
+sources:
+  - name: bronze
+    database: INSURANCE
+    schema: BRONZE
+    tables:
+      - name: raw_customers
+      - name: raw_vehicles
+      - name: raw_policies
+      - name: raw_premiums
+      - name: raw_claim_events
+      - name: raw_postcodes

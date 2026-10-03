@@ -1,0 +1,18 @@
+#  history (SCD Type 2)
+# Type 2 history: every time a customer or policy changes, the old row is
+# closed (dbt_valid_to filled in) and a new row is opened.
+
+snapshots:
+  - name: snap_customers
+    relation: ref('stg_customers')
+    config: 
+      unique_key: customer_id
+      strategy: timestamp
+      updated_at: update_at
+
+  - name: snap_policies
+    relation: ref('stg_policies')
+    config: 
+      unique_key: policy_id
+      strategy: timestamp
+      updated_at: updated_at
