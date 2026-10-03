@@ -16,7 +16,7 @@ See [docs/architecture.md](docs/architecture.md) for the design.
 - [x] S3 + Snowflake Bronze
 - [x] Kafka streaming
 - [x] dbt Silver / Gold
-- [ ] Airflow
+- [x] Airflow
 - [ ] Dashboard
 
 ## Run the generator
