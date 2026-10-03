@@ -9,3 +9,5 @@ snowflake-connector-python>=3.10
 python-dotenv>=1.0
 
 confluent-kafka>=2.4
+
+dbt-snowflake>=1.10,<2.0
