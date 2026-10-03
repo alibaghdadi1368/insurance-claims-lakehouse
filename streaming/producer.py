@@ -1,6 +1,7 @@
 """
 Publish one day of claim events to Kafka.
 
+    python -m streaming.producer                  # the last day the generator made
     python -m streaming.producer --date 2026-10-01
     python -m streaming.producer --date 2026-10-01 --delay 0.5   # slow, for a live demo
 
@@ -13,7 +14,7 @@ import json
 import os
 import time
 from confluent_kafka import Producer
-from pipeline.settings import ROOT
+from pipeline.settings import ROOT, last_business_day
 
 TOPIC = "claim-events"
 BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP", "localhost:9092")
@@ -46,7 +47,7 @@ def publish(day, delay=0.0):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--date", required=True)
+    parser.add_argument("--date", help="default: the last day the generator made")
     parser.add_argument("--delay", type=float, default=0.0, help="Seconds between messages")
     args = parser.parse_args()
-    publish(args.date, args.delay)
+    publish(args.date or last_business_day(), args.delay)

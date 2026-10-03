@@ -1,4 +1,4 @@
-# Local infrastructure: one Kafka broker (KRaft mode, no ZooKeeper) and a UI.
+# Local infrastructure: one Kafka broker (KRaft mode, no ZooKeeper), a Kafka UI and Airflow.
 # Start with:  docker compose up -d
 services:
   kafka:
@@ -31,5 +31,29 @@ services:
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:19092
+    depends_on:
+      - kafka
+  
+  airflow:
+    build:
+      context: .
+      dockerfile: airflow/Dockerfile
+    container_name: airflow
+    command: standalone
+    # run as your own Linux user, so files the tasks write in data/ and dbt/ stay yours
+    user: "${AIRFLOW_UID:-50000}:0"
+    ports:
+      - "8081:8080" # 8080 is taken by kafka-ui
+    env_file: .env
+    environment:
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/project/airflow/dags
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      # local only: everyone is admin, so there is no login screen
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "true"
+      KAFKA_BOOTSTRAP: kafka:19092
+      # only used when you log in to Snowflake with a key: the same file, seen from inside the container
+      SNOWFLAKE_PRIVATE_KEY_PATH: ${SNOWFLAKE_PRIVATE_KEY_PATH:+/opt/project/keys/rsa_key.p8}
+    volumes:
+      - .:/opt/project
     depends_on:
       - kafka

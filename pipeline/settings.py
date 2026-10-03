@@ -1,4 +1,5 @@
 """Reads connection settings from .env so no secret ever sits in the code."""
+import json
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -11,6 +12,10 @@ def env(name: str) -> str:
     if not value:
         raise SystemExit(f"{name} is not set. Copy .env.example to .env and fill it in.")
     return value
+
+def last_business_day() -> str:
+    """The last day the generator produced, e.g. '2026-10-03'."""
+    return json.loads((ROOT / "data" / "state" / "meta.json").read_text())["last_run"]
 
 def snowflake_connect():
     import snowflake.connector

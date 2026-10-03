@@ -3,6 +3,7 @@ Upload landing files to S3.
 
     python -m pipeline.s3_upload                    # everything in data/landing + postcodes
     python -m pipeline.s3_upload --date 2026-10-01  # only that day's files
+    python -m pipeline.s3_upload --date latest      # the last day the generator made
 
 The folder layout in the bucket mirrors data/landing, under a landing/ prefix:
     s3://<bucket>/landing/customers/customers_2026-10-01.csv
@@ -11,7 +12,7 @@ import argparse
 
 import boto3
 
-from pipeline.settings import ROOT, env
+from pipeline.settings import ROOT, env, last_business_day
 
 LANDING = ROOT / "data" / "landing"
 POSTCODES = ROOT / "generator" / "reference" / "postcodes.csv"
@@ -35,5 +36,6 @@ def upload(day=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--date", help="only upload files for this day (YYYY-MM-DD)")
-    upload(parser.parse_args().date)
+    parser.add_argument("--date", help="only upload files for this day (YYYY-MM-DD or 'latest')")
+    day = parser.parse_args().date
+    upload(last_business_day() if day == "latest" else day)

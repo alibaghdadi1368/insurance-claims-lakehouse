@@ -2,7 +2,8 @@
 Generate source data for Polder Verzekeringen.
 
     python -m generator backfill                  # history up to config.HISTORY_END
-    python -m generator daily --date 2026-10-01   # one more business day
+    python -m generator daily                     # the next business day
+    python -m generator daily --date 2026-10-01   # a specific day (must be the next one)
 
 Batch extracts go to data/landing/<entity>/ as semicolon-separated CSV,
 the way the (imaginary) policy admin system exports them. Claim events of
@@ -76,6 +77,14 @@ def load_state():
     pending = read_jsonl(config.STATE_DIR / "pending_events.jsonl")
     meta = json.loads(meta_file.read_text())
     return customers, vehicles, pols, pending, meta
+
+
+def next_day() -> date:
+    """The business day after the last generated one."""
+    meta_file = config.STATE_DIR / "meta.json"
+    if not meta_file.exists():
+        raise SystemExit("No state found. Run `python -m generator backfill` first.")
+    return date.fromisoformat(json.loads(meta_file.read_text())["last_run"]) + timedelta(days=1)
 
 
 def claim_context(pols, customers, vehicles, postcodes):
@@ -230,13 +239,13 @@ def main():
     sub = parser.add_subparsers(dest="mode", required=True)
     sub.add_parser("backfill", help="generate the full history")
     d = sub.add_parser("daily", help="generate one business day")
-    d.add_argument("--date", required=True, type=date.fromisoformat)
+    d.add_argument("--date", type=date.fromisoformat, help="default: the day after the last run")
     args = parser.parse_args()
 
     if args.mode == "backfill":
         backfill()
     else:
-        daily(args.date)
+        daily(args.date or next_day())
 
 
 if __name__ == "__main__":
