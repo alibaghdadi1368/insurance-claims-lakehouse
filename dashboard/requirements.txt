@@ -1,0 +1,7 @@
+# Only what the dashboard needs. Streamlit Community Cloud reads this file
+# (it sits next to app.py), so the public demo doesn't install dbt, Kafka or boto3.
+streamlit>=1.50
+pandas>=2.2
+pyarrow>=15.0
+plotly>=6.0
+python-dotenv>=1.0
