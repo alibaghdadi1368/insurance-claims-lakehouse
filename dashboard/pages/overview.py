@@ -14,7 +14,7 @@ paid = lr["claims_paid_eur"].sum()
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Premium due", f"€{premium / 1e6:,.2f}M")
 c1.metric("Claims paid", f"€{paid / 1e6:,.2f}M")
-c3.metric("Loss ration", f"{paid / premium:.0%}" if premium else "-")
+c3.metric("Loss ratio", f"{paid / premium:.0%}" if premium else "-")
 c4.metric("Claims reported", f"{lr['claims_reported'].sum():,}")
 
 monthly = lr.groupby("month", as_index=False)[["premium_eur", "claims_paid_eur"]].sum()
