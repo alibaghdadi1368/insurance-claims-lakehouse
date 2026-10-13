@@ -12,29 +12,37 @@ each product, how fast do we pay claims, and which claims look suspicious?
 
 ![Dashboard](docs/dashboard.png)
 
-Stack: Python · Kafka · AWS S3 · Snowflake · dbt · Airflow · Streamlit · GitHub Actions
+Stack: Python · Kafka · AWS S3 · Snowflake · dbt · Airflow · Docker · Streamlit · GitHub Actions
 
 ## Architecture
 
 ![Architecture](docs/architecture.png)
 
+Everything goes through S3 first and only then into Snowflake. That way
+Bronze always has a file I can point at when a number looks wrong.
+
 - **Batch path:** a Python generator plays the policy admin system and
   writes daily CSV extracts. They go to S3 and are loaded into Bronze with
   `COPY INTO` through a storage integration (IAM role, no access keys).
+  The CBS postcode reference takes the same route.
 - **Streaming path:** claim events (reported, assessed, approved/rejected,
-  paid) go through a Kafka topic. A consumer batches them into JSON files
-  in S3, which land in a `VARIANT` column in Bronze.
-- **Modelling:** dbt builds Silver (typed, cleaned, deduplicated, SCD2
-  snapshots of customers and policies) and Gold (a small star schema plus
-  four marts).
-- **Orchestration:** one Airflow DAG runs the whole day, from generating
-  the data to refreshing the dashboard's snapshot.
-
-  ![Orchestration](docs/airflow.png)
+  paid) go through a Kafka topic. A consumer batches them into small JSON
+  files in S3, which land in a `VARIANT` column in Bronze.
+- **Serving:** the dashboard reads Gold live when it runs on my laptop. The
+  public demo reads a Parquet export of Gold instead (more on that below).
 
 More detail and the layer rules are in [docs/architecture.md](docs/architecture.md).
 
-## What's in Gold
+## Modelling with dbt
+
+dbt builds Silver (typed, cleaned, deduplicated, plus SCD2 snapshots of
+customers and policies) and Gold (a small star schema and four marts).
+The green nodes on the left are the raw Bronze tables. Everything to the
+right of them is a dbt model, snapshot or test.
+
+![dbt lineage](docs/lineage.png)
+
+### What's in Gold
 
 | Table                                   | Grain                                     | Used for                                       |
 | --------------------------------------- | ----------------------------------------- | ---------------------------------------------- |
@@ -46,6 +54,20 @@ More detail and the layer rules are in [docs/architecture.md](docs/architecture.
 | `mart_claims_sla`                       | month × claim type                        | handling speed                                 |
 | `mart_fraud_signals`                    | one flagged claim                         | review list                                    |
 | `mart_region_risk`                      | municipality                              | claims per 1,000 policies                      |
+
+## Orchestration with Airflow
+
+One DAG runs a whole business day: generate the extracts and events,
+upload to S3, push the events through Kafka, load Bronze, run `dbt build`
+and refresh the dashboard's Parquet export. Upload and the Kafka path run
+side by side; the load only starts when both are done.
+
+![Airflow DAG run](docs/airflow_dag_status.png)
+
+Airflow, Kafka and Kafka UI all run in Docker Compose on my laptop, so the
+whole stack comes up with one command and goes away with another.
+
+![Airflow in Docker](docs/airflow.png)
 
 ## Things I ran into
 
@@ -75,10 +97,13 @@ More detail and the layer rules are in [docs/architecture.md](docs/architecture.
 - **SCD2 history only starts when the snapshots start.** The backfill is a
   picture of one day, so `dim_customer` and `dim_policy` begin with a single
   version per record. dbt snapshots (timestamp strategy on `updated_at`)
-  add a new version for every house move or renewal from then on. One
-  detail cost me an evening: the snapshot compares timestamps, so
+  add a new version for every house move or renewal from then on. Two
+  details cost me time here. The snapshot compares timestamps, so
   `updated_at` has to be cast to `timestamp_ntz` in Silver, not left as a
-  date.
+  date. And for a while the customer column was called `update_at`, one
+  letter short. Nothing broke, because the snapshot config had the same
+  typo. I only spotted it when reviewing the repo. Renaming the column in
+  the existing snapshot table kept the history instead of starting over.
 - **Two calendars that disagreed.** My first Airflow DAG passed Airflow's
   run date to the generator, but the generator keeps its own calendar and
   refuses to skip a day. After a few days made by hand, the two were out of
@@ -121,6 +146,9 @@ docker compose up -d                         # Kafka, Kafka UI (8080), Airflow (
 streamlit run dashboard/app.py
 ```
 
+After that, open Airflow on http://localhost:8081 and trigger the DAG to
+add one more business day.
+
 ## Repository layout
 
 | Path         | What                                                         |
@@ -138,7 +166,12 @@ streamlit run dashboard/app.py
 
 The postcode reference comes from my
 [nl-housing-data-cleaning](https://github.com/alibaghdadi1368/nl-housing-data-cleaning)
-project (CBS open data, CC-BY 4.0).
+project (CBS open data, CC-BY 4.0). All policy, customer and claim data is
+synthetic.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
 
 ## Contact
 
