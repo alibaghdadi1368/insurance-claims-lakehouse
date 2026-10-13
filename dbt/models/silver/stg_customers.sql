@@ -25,6 +25,6 @@ SELECT
     substr(postcode, 1, 4) as pc4,
     city,
     try_to_date(customer_since) as customer_since,
-    try_to_date(updated_at)::timestamp_ntz as update_at
+    try_to_date(updated_at)::timestamp_ntz as updated_at
 FROM ranked
 where rn = 1
