@@ -1,0 +1,43 @@
+name: keep-demo-awake
+
+on:
+  schedule:
+    - cron: "0 */8 * * *"     # every 8 hours (UTC)
+  workflow_dispatch:           # lets you run it by hand too
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Visit the app and wake it if needed
+        run: |
+          python - <<'EOF'
+          from playwright.sync_api import sync_playwright
+
+          URL = "https://polder-insurance.streamlit.app/"
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch()
+              page = browser.new_page()
+              page.goto(URL, timeout=120_000)
+              page.wait_for_timeout(10_000)
+
+              button = page.get_by_role("button", name="Yes, get this app back up!")
+              if button.count() > 0:
+                  print("App was asleep, waking it up")
+                  button.first.click()
+                  page.wait_for_timeout(60_000)
+              else:
+                  print("App is awake")
+              browser.close()
+          EOF
